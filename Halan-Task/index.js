@@ -1,16 +1,11 @@
-//to use the framework "express"
 const express = require('express');
 const app = express();
 
-
-//get the ip address of the host 
-var address = require('address');
-var ip = address.ipv6();
-
+const ADDRESS = require('address');
+const IP = ADDRESS.ipv6();
 
 //connecting to the database "postgres"
 const { Client } = require('pg');
-
 const client = new Client({
     user: 'postgres',
     host: 'localhost',
@@ -21,45 +16,54 @@ const client = new Client({
 client.connect();
 
 
-
-//insert data into table
+//Create table query
+const query_createTable = `
+CREATE TABLE 
+IF NOT EXISTS
+ip_addresses  (
+    ipAddress varchar(255) 
+);
+`;
+    
+//insert query
 const query_insert = `
 INSERT INTO ip_addresses (ipAddress)
-VALUES ('${ip}')
+VALUES ('${IP}'
 `;
 
-//retrieve data from table
+//retrieve query
 const query_retrieve = `
 SELECT *
 FROM ip_addresses
 `;
 
 
+//run the query of creating database
+client.query(query_createTable, (err, res) => {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    console.log('Table is successfully created');
+});
 
-//get the ip address
+//save the ip address to database
 app.get('/ip', (req, res) => {
-
-    //insert ip address into database
     client.query(query_insert, (err, res) => {
         if (err) {
             console.error(err);
             return;
         }
         console.log('Data insert successful');
-        //client.end();
     });
 
-    //print in the page
-    res.send(` ${ip} is inserted successfully to database`);
+    res.send(` ${IP} is inserted successfully to database`);
 });
 
-
-
+//retrieve all the ips from database
 app.get('/allips', (req, res) => {
 
-    //res.send('All IPs are retrieved succussfully from Postgres db :)');
-
-    var IPs = [];
+    var ips_array = [];
     
     client.query(query_retrieve, (err, data) => {
         if (err) {
@@ -68,20 +72,17 @@ app.get('/allips', (req, res) => {
         }
 
         for (let row of data.rows) {
-            IPs.push(row);
+            ips_array.push(row);
         }
         
-        console.log(IPs);
-        res.send(IPs);
-        //client.end();
+        console.log(ips_array);
+        res.send(ips_array);
     });
 });
 
-
-
 //read the main url of the api  
 app.get('/', (req, res) => {
-    
+
     if(!req.query.n) 
         return res.send('Halan ROCKS It') ;
     
@@ -91,31 +92,5 @@ app.get('/', (req, res) => {
 });
 
 
-
-//Create table with sql database
-const query_createTable = `
-CREATE TABLE 
-IF NOT EXISTS
-ip_addresses  (
-    ipAddress varchar(255) 
-    );
-    `;
-    
-//run the query
-client.query(query_createTable, (err, res) => {
-    if (err) {
-        console.error(err);
-        return;
-    }
-    console.log('Table is successfully created');
-    //client.end();
-});
-
-    
-  
-
-
-
-//make the server listen to connections through a specific port
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port} ...`));
