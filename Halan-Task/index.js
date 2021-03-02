@@ -38,7 +38,7 @@ FROM ip_addresses
 `;
 
 
-//run the query of creating database
+//run the query of creating a table
 client.query(query_createTable, (err, res) => {
     if (err) {
         console.error(err);
